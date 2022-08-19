@@ -10,12 +10,13 @@ function luckyDraw(player) {
 }
 
 const getResults = async (...players) =>{
-     try{
-       players.forEach(async player => console.log(await luckyDraw(player)))
+  players.forEach(async player => {
+    try{
+      const data1 = await luckyDraw(player)
+      console.log(data1)
     }
-    //why it not enter here?
-    catch (err) {console.log("stampo l'errore")}
+    catch(err) {console.log(err.message);}
+  });
 
 }
-
 getResults('Tina','Jorge','Julien')
