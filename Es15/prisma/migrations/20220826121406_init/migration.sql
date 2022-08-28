@@ -10,3 +10,6 @@ CREATE TABLE "Planet" (
 
     CONSTRAINT "Planet_pkey" PRIMARY KEY ("id")
 );
+
+INSERT INTO Planet (name, description, diameter, moons)
+VALUES ('earth', 'very beautiful', 100000, 1);
