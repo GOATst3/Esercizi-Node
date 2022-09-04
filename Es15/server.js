@@ -1,17 +1,25 @@
 const express = require('express');
 const prisma = require('./client');
 const cors = require('cors');
+const {initMulterMiddleware} = require('./middleware/multer.js');
 require('dotenv').config();
 
 const app = express()
+const upload = initMulterMiddleware()
+
 
 app.use(express.json())
-app.use(cors({origin:"http://localhost:5500"}))
+app.use(cors({origin:"*"}))
 const port=process.env.PORT
 
-
-
-
+//
+//
+//                  Routes
+//                    || 
+//                   \  /
+//                    \/
+//
+//
 
 //find all planets
 app.get('/planets', async (req,res)=>{
@@ -81,6 +89,34 @@ app.delete('/planet/:id(\\d+)', async (req, res, next) => {
     }
 })
 
+//upload a photo
+app.post('/planet/:id(\\d+)/photo',
+    upload.single('photo'),
+    async (req, res, next) => {
+
+        if (!req.file) {
+            res.status(400)
+            return next('No photo file uploaded')
+        }
+
+        const planetId = Number(req.params.id)
+        const photoFilename = req.file.filename
+
+        try {
+            await prisma.planet.update({
+                where: { id : planetId },
+                data: { photo : photoFilename }
+            });
+            res.status(201).json({ photoFilename })
+        } catch (err) {
+            res.status(404)
+            next(`Cannot POST /planet/${planetId}/photo`)
+        }
+
+    });
+
+app.use("/planet/photos", express.static("uploads"))
+    
 app.listen(port,()=>console.log('Server is running on localhost:'+port))
 
 module.exports=app

@@ -14,6 +14,7 @@ model Planet{
   id              Int         @id @default(autoincrement())
   name            String      @db.VarChar(255)
   description     String?
+  photo           String?
   diameter        Int
   moons           Int
   createdAt       DateTime    @default(now())
