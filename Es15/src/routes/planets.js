@@ -1,9 +1,7 @@
 const express = require('express');
 const prisma = require('../lib/prisma/client');
-const {
-    validate,
-    validationErrorMiddleware,
-} = require('../lib/middleware/validation/index');
+const {validate} = require('../lib/middleware/validation/index');
+const { checkAuthorization } = require('../lib/middleware/passport');
 const planetSchema = require('../lib/middleware/validation/planet');
 const { initMulterMiddleware } = require('../lib/middleware/multer');
 
@@ -22,14 +20,14 @@ const upload = initMulterMiddleware()
 //
 
 //find all planets
-app.get('/planets', async (req, res) => {
+app.get('/', async (req, res) => {
     const planets = await prisma.planet.findMany()
 
     res.json(planets)
 })
 
 //find planet by id  // the \\d+ is a regex that stands for "only digits [0-9], composed by one or more character"
-app.get('/planets/:id(\\d+)', async (req,res,next)=>{
+app.get('/:id(\\d+)', async (req,res,next)=>{
     const planetID = Number(req.params.id)
 
     const planet = await prisma.Planet.findUnique({
@@ -43,11 +41,16 @@ app.get('/planets/:id(\\d+)', async (req,res,next)=>{
 })
 
 //add a planet into db 
-app.post('/planets', validate({ body: planetSchema }), async (req, res) => {
-    const data = req.body
+app.post(
+    '/',
+    checkAuthorization,
+    validate({ body: planetSchema }),
+    async (req, res) => {
 
+    const data = req.body
+    const username = req.user?.username;
     const planet = await prisma.planet.create({
-        data: data,
+        data: {...data,createdBy: username, updatedBy: username}
     });
 
     res.status(201).json(planet);
@@ -55,16 +58,18 @@ app.post('/planets', validate({ body: planetSchema }), async (req, res) => {
 
 //update a planet
 app.put(
-    '/planets/:id(\\d+)',
+    '/:id(\\d+)',
+    checkAuthorization,
     validate({ body: planetSchema }),
     async (req, res, next) => {
         const data = req.body
         const planetID = Number(req.params.id)
+        const username = req.user?.username
 
         try {
             const planet = await prisma.planet.update({
                 where: { id: planetID },
-                data: data,
+                data: {...data, updatedBy:username}
             });
             res.status(200).json(planet);
         }
@@ -77,7 +82,10 @@ app.put(
 )
 
 //delete a planet
-app.delete('/planets/:id(\\d+)', async (req, res, next) => {
+app.delete(
+    '/:id(\\d+)',
+    checkAuthorization,
+    async (req, res, next) => {
     const planetID = Number(req.params.id)
 
     try{
@@ -94,7 +102,9 @@ app.delete('/planets/:id(\\d+)', async (req, res, next) => {
 })
 
 //upload a photo
-app.post('/planet/:id(\\d+)/photo',
+app.post(
+    '/:id(\\d+)/photo',
+    checkAuthorization,
     upload.single('photo'),
     async (req, res, next) => {
 

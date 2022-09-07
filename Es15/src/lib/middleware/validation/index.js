@@ -3,7 +3,9 @@ const { Validator,
     ValidationError
 } = require('express-json-validator-middleware');
 
-const validator = new Validator({});
+const validator = new Validator({
+    coerceTypes: true,
+});
 
 addFormats(validator.ajv, ['date.time'])
     .addKeyword('kind')
